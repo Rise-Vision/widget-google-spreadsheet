@@ -223,7 +223,7 @@ angular.module( "risevision.widget.googleSpreadsheet.settings" )
         var isValid = true;
 
         if ( $scope.settings.additionalParams.spreadsheet.apiKey ) {
-          isValid = ( newVal && newVal > 10 ) ? true : false;
+          isValid = ( newVal && newVal >= 10 ) ? true : false;
         }
 
         $scope.validCustomApiKeyInterval = isValid;
