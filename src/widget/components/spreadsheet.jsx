@@ -195,10 +195,13 @@ const prefs = new gadgets.Prefs(),
         }
       }
 
-      if ( params.spreadsheet.apiKey ) {
+      if ( params.spreadsheet.apiKey && params.spreadsheet.apiKey !== this.API_KEY_DEFAULT ) {
         sheetParams.apikey = params.spreadsheet.apiKey;
-      } else if ( params.spreadsheet.refresh < 60 ) {
-        sheetParams.refresh = 60;
+        // force a minimum 10 min refresh for custom API key
+        sheetParams.refresh = params.spreadsheet.refresh < 10 ? 10 : params.spreadsheet.refresh;
+      } else {
+        // ensure a minimum 60 min refresh for RiseVision API key
+        sheetParams.refresh = params.spreadsheet.refresh < 60 ? 60 : params.spreadsheet.refresh;
       }
 
       sheet = new RiseGoogleSheet( sheetParams, riseData, this.handleGoogleSheet );

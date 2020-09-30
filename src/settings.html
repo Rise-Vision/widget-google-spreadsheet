@@ -214,6 +214,15 @@
               </div>
             </div>
 
+
+            <div ng-if="!validCustomApiKeyInterval">
+              <div class="content-box add-bottom">
+                <div class="bg-danger add-padding">
+                  <span>The minimum refresh interval is 10 minutes when using your own API key.</span>
+                </div>
+              </div>
+            </div>
+
             <hr>
           </div>
     <!-- END REFRESH INTERVAL -->

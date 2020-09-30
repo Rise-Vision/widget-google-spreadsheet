@@ -7,6 +7,7 @@ angular.module( "risevision.widget.googleSpreadsheet.settings" )
       $scope.currentSheet = null;
       $scope.columns = [];
       $scope.validApiKey = true;
+      $scope.validCustomApiKeyInterval = true;
       $scope.public = true;
       $scope.validData = true;
 
@@ -216,6 +217,17 @@ angular.module( "risevision.widget.googleSpreadsheet.settings" )
             $scope.settings.additionalParams.spreadsheet.refresh = 60;
           }
         }
+      } );
+
+      $scope.$watch( "settings.additionalParams.spreadsheet.refresh", function( newVal ) {
+        var isValid = true;
+
+        if ( $scope.settings.additionalParams.spreadsheet.apiKey ) {
+          isValid = ( newVal && newVal >= 10 ) ? true : false;
+        }
+
+        $scope.validCustomApiKeyInterval = isValid;
+        $scope.settingsForm.$setValidity( "refresh", isValid );
       } );
 
       $scope.$watch( "validApiKey", function( newVal, oldVal ) {
