@@ -91,9 +91,13 @@ const prefs = new gadgets.Prefs(),
       this.setSeparator();
 
       if ( Common.isLegacy() ) {
-        this.showError( "This version of Spreadsheet Widget is not supported on this version of Rise Player. " +
-          "Please use the latest Rise Player version available from https://help.risevision.com/user/create-a-display" );
+        this.logEvent( {
+          event: "warning",
+          event_details: "Widget is not supported on legacy rise player",
+          url: params.spreadsheet.url
+        } );
 
+        this.errorFlag = true;
         this.isLoading = false;
         this.ready();
 
@@ -241,8 +245,9 @@ const prefs = new gadgets.Prefs(),
 
       let statusCode = 0,
         errorMessage = "The request failed with status code: 0",
-        message = "There was an error accessing your spreadsheet data. Please ensure a valid range and Worksheet has been selected.",
-        event_details = "spreadsheet not reachable";
+        event_details = "spreadsheet not reachable",
+        isAPIError = false,
+        logParams;
 
       if ( detail.status && detail.statusText ) {
         errorMessage = `${detail.status}: ${detail.statusText}`;
@@ -254,10 +259,8 @@ const prefs = new gadgets.Prefs(),
       }
 
       if ( statusCode === 403 ) {
-        message = "To use this Google Spreadsheet it must be publicly accessible. To do this, open the Google Spreadsheet and select File > Share > Advanced, then select On - Anyone with the link.";
         event_details = "spreadsheet not public";
       } else if ( statusCode === 404 ) {
-        message = "Spreadsheet does not exist.";
         event_details = "spreadsheet not found";
       }
 
@@ -266,31 +269,30 @@ const prefs = new gadgets.Prefs(),
         // cached data provided, process as normal response
         this.processGoogleSheetResponse( detail );
       } else {
-        this.showError( message );
+        this.errorFlag = true;
         this.setState( { data: null } );
       }
 
-      if ( this.isLoading ) {
-        this.isLoading = false;
-        this.ready();
-      }
+      isAPIError = statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" );
 
-      if ( statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" ) ) {
-        if ( !this.apiErrorFlag ) {
-          this.apiErrorFlag = true;
-          return;
-        }
-      } else {
-        this.apiErrorFlag = false;
-      }
-
-      this.logEvent( {
-        "event": "error",
+      logParams = {
+        "event": isAPIError ? "warning" : "error",
         "event_details": event_details,
         "error_details": errorMessage,
         "url": params.spreadsheet.url,
         "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
-      } );
+      }
+
+      this.logEvent( logParams );
+
+      if ( this.isLoading ) {
+        this.isLoading = false;
+        this.ready();
+      } else {
+        if ( this.errorFlag && !this.viewerPaused ) {
+          this.done();
+        }
+      }
     },
 
     processGoogleSheetQuota: function( detail ) {
@@ -306,13 +308,16 @@ const prefs = new gadgets.Prefs(),
         // cached data provided, process as normal response
         this.processGoogleSheetResponse( detail );
       } else {
-        this.showError( "The API Key used to retrieve data from the Spreadsheet has exceeded the daily quota. Please use a different API Key." );
-
+        this.errorFlag = true;
         this.setState( { data: null } );
 
         if ( this.isLoading ) {
           this.isLoading = false;
           this.ready();
+        } else {
+          if ( !this.viewerPaused ) {
+            this.done();
+          }
         }
       }
     },
@@ -420,17 +425,6 @@ const prefs = new gadgets.Prefs(),
 
     logEvent: function( params ) {
       Logger.logEvent( this.getTableName(), params );
-    },
-
-    showError: function( messageVal ) {
-      this.errorFlag = true;
-
-      this.props.showMessage( messageVal );
-
-      // if Widget is playing right now, run the timer
-      if ( !this.viewerPaused ) {
-        this.startErrorTimer();
-      }
     },
 
     // Calculate the width that is taken up by rendering columns with an explicit width.
