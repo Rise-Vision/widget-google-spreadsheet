@@ -244,13 +244,16 @@ const prefs = new gadgets.Prefs(),
       console.log( "processGoogleSheetError", detail );
 
       let statusCode = 0,
-        errorMessage = "The request failed with status code: 0",
-        event_details = "spreadsheet not reachable",
-        isAPIError = false,
-        logParams;
+        logParams = {
+          "event": "error",
+          "event_details": "spreadsheet not reachable",
+          "error_details": "The request failed with status code: 0",
+          "url": params.spreadsheet.url,
+          "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
+        };
 
       if ( detail.status && detail.statusText ) {
-        errorMessage = `${detail.status}: ${detail.statusText}`;
+        logParams.error_details = `${detail.status}: ${detail.statusText}`;
         statusCode = detail.status;
       }
 
@@ -259,9 +262,14 @@ const prefs = new gadgets.Prefs(),
       }
 
       if ( statusCode === 403 ) {
-        event_details = "spreadsheet not public";
+        logParams.event_details = "spreadsheet not public";
       } else if ( statusCode === 404 ) {
-        event_details = "spreadsheet not found";
+        logParams.event_details = "spreadsheet not found";
+      }
+
+      if ( statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" ) ) {
+        logParams.event = "warning"
+        logParams.event_details = "api server error";
       }
 
       // check if there is cached data
@@ -271,16 +279,6 @@ const prefs = new gadgets.Prefs(),
       } else {
         this.errorFlag = true;
         this.setState( { data: null } );
-      }
-
-      isAPIError = statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" );
-
-      logParams = {
-        "event": isAPIError ? "warning" : "error",
-        "event_details": event_details,
-        "error_details": errorMessage,
-        "url": params.spreadsheet.url,
-        "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
       }
 
       this.logEvent( logParams );
