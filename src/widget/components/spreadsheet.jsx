@@ -298,6 +298,7 @@ const prefs = new gadgets.Prefs(),
       this.logEvent( {
         "event": "error",
         "event_details": "api quota exceeded",
+        "error_details": detail.status && detail.statusText ? `${detail.status}: ${detail.statusText}` : "",
         "url": params.spreadsheet.url,
         "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
       } );
