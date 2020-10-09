@@ -251,73 +251,39 @@ const prefs = new gadgets.Prefs(),
           "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
         };
 
-      this.props.hideMessage();
-
       if ( detail.status && detail.statusText ) {
         logParams.error_details = `${detail.status}: ${detail.statusText}`;
         statusCode = detail.status;
       }
 
       if ( statusCode === 429 ) {
-        return this.processGoogleSheetQuota( detail );
-      }
-
-      if ( statusCode === 403 ) {
+        logParams.event_details = "api quota exceeded";
+      } else if ( statusCode === 403 ) {
         logParams.event_details = "spreadsheet not public";
       } else if ( statusCode === 404 ) {
         logParams.event_details = "spreadsheet not found";
-      }
-
-      if ( statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" ) ) {
-        logParams.event = "warning"
+      } else if ( statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" ) ) {
         logParams.event_details = "api server error";
       }
+
+      this.logEvent( logParams );
 
       // check if there is cached data
       if ( detail.results ) {
         // cached data provided, process as normal response
-        this.processGoogleSheetResponse( detail );
-      } else {
-        this.errorFlag = true;
-        this.setState( { data: null } );
+        return this.processGoogleSheetResponse( detail );
       }
 
-      this.logEvent( logParams );
+      this.props.hideMessage();
+      this.errorFlag = true;
+      this.setState( { data: null } );
 
       if ( this.isLoading ) {
         this.isLoading = false;
         this.ready();
       } else {
-        if ( this.errorFlag && !this.viewerPaused ) {
+        if ( !this.viewerPaused ) {
           this.done();
-        }
-      }
-    },
-
-    processGoogleSheetQuota: function( detail ) {
-      // log the event
-      this.logEvent( {
-        "event": "error",
-        "event_details": "api quota exceeded",
-        "error_details": detail.status && detail.statusText ? `${detail.status}: ${detail.statusText}` : "",
-        "url": params.spreadsheet.url,
-        "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
-      } );
-
-      if ( detail && detail.results ) {
-        // cached data provided, process as normal response
-        this.processGoogleSheetResponse( detail );
-      } else {
-        this.errorFlag = true;
-        this.setState( { data: null } );
-
-        if ( this.isLoading ) {
-          this.isLoading = false;
-          this.ready();
-        } else {
-          if ( !this.viewerPaused ) {
-            this.done();
-          }
         }
       }
     },
