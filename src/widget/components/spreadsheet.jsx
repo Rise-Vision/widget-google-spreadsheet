@@ -251,6 +251,8 @@ const prefs = new gadgets.Prefs(),
           "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
         };
 
+      this.props.hideMessage();
+
       if ( detail.status && detail.statusText ) {
         logParams.error_details = `${detail.status}: ${detail.statusText}`;
         statusCode = detail.status;
