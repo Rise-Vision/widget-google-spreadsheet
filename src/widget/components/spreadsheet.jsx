@@ -23,7 +23,6 @@ const prefs = new gadgets.Prefs(),
     isLoading: true,
     viewerPaused: true,
     errorFlag: false,
-    errorTimer: null,
     pudTimer: null,
     totalCols: 0,
     apiErrorFlag: false,
@@ -376,7 +375,7 @@ const prefs = new gadgets.Prefs(),
       this.viewerPaused = false;
 
       if ( this.errorFlag ) {
-        this.startErrorTimer();
+        return this.done();
       }
 
       if ( this.refs.scrollComponent && this.refs.scrollComponent.canScroll() ) {
@@ -404,22 +403,6 @@ const prefs = new gadgets.Prefs(),
 
     getTableName: function() {
       return "spreadsheet_events";
-    },
-
-    clearErrorTimer: function() {
-      clearTimeout( this.errorTimer );
-      this.errorTimer = null;
-    },
-
-    startErrorTimer: function() {
-      var self = this;
-
-      this.clearErrorTimer();
-
-      this.errorTimer = setTimeout( function() {
-        // notify Viewer widget is done
-        self.done();
-      }, 5000 );
     },
 
     logEvent: function( params ) {
