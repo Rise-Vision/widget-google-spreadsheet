@@ -45,7 +45,9 @@
     } else if ( ( methodName === "rsevent_ready" ) || ( methodName === "rsevent_done" ) ) {
       for ( i = 0; i < rpc.methods.length; i++ ) {
         if ( rpc.methods[ i ] === "rscmd_play_" + param1 ) {
-          rpc.callbacks[ i ]();
+          setTimeout( function() {
+            rpc.callbacks[ i ]();
+          }, 200 );
         }
       }
     } else {
