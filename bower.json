@@ -39,7 +39,7 @@
     "gsap": "~1.18.5",
     "jquery": "~3.3.1",
     "rv-common-style": "https://github.com/Rise-Vision/common-style.git#v1.3.65",
-    "widget-common": "https://github.com/Rise-Vision/widget-common.git#fix/issue-321",
+    "widget-common": "https://github.com/Rise-Vision/widget-common.git#55c9c078",
     "widget-settings-ui-core": "https://github.com/Rise-Vision/widget-settings-ui-core.git#0.4.3",
     "widget-settings-ui-components": "https://github.com/Rise-Vision/widget-settings-ui-components.git#3.3.0",
     "responsive-fixed-data-table": "https://github.com/Rise-Vision/responsive-fixed-data-table.git#^3.1.0"
@@ -52,6 +52,6 @@
     "jquery": "~3.3.1",
     "lodash": "~4.17.4",
     "rv-common-style": "v1.3.65",
-    "widget-common": "fix/issue-321"
+    "widget-common": "55c9c078"
   }
 }
