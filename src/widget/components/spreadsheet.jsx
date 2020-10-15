@@ -23,7 +23,6 @@ const prefs = new gadgets.Prefs(),
     isLoading: true,
     viewerPaused: true,
     errorFlag: false,
-    errorTimer: null,
     pudTimer: null,
     totalCols: 0,
     apiErrorFlag: false,
@@ -91,9 +90,13 @@ const prefs = new gadgets.Prefs(),
       this.setSeparator();
 
       if ( Common.isLegacy() ) {
-        this.showError( "This version of Spreadsheet Widget is not supported on this version of Rise Player. " +
-          "Please use the latest Rise Player version available from https://help.risevision.com/user/create-a-display" );
+        this.logEvent( {
+          event: "warning",
+          event_details: "Widget is not supported on legacy rise player",
+          url: params.spreadsheet.url
+        } );
 
+        this.errorFlag = true;
         this.isLoading = false;
         this.ready();
 
@@ -240,79 +243,47 @@ const prefs = new gadgets.Prefs(),
       console.log( "processGoogleSheetError", detail );
 
       let statusCode = 0,
-        errorMessage = "The request failed with status code: 0",
-        message = "There was an error accessing your spreadsheet data. Please ensure a valid range and Worksheet has been selected.",
-        event_details = "spreadsheet not reachable";
+        logParams = {
+          "event": "error",
+          "event_details": "spreadsheet not reachable",
+          "error_details": "The request failed with status code: 0",
+          "url": params.spreadsheet.url,
+          "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
+        };
 
       if ( detail.status && detail.statusText ) {
-        errorMessage = `${detail.status}: ${detail.statusText}`;
+        logParams.error_details = `${detail.status}: ${detail.statusText}`;
         statusCode = detail.status;
       }
 
       if ( statusCode === 429 ) {
-        return this.processGoogleSheetQuota( detail );
+        logParams.event_details = "api quota exceeded";
+      } else if ( statusCode === 403 ) {
+        logParams.event_details = "spreadsheet not public";
+      } else if ( statusCode === 404 ) {
+        logParams.event_details = "spreadsheet not found";
+      } else if ( statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" ) ) {
+        logParams.event_details = "api server error";
       }
 
-      if ( statusCode === 403 ) {
-        message = "To use this Google Spreadsheet it must be publicly accessible. To do this, open the Google Spreadsheet and select File > Share > Advanced, then select On - Anyone with the link.";
-        event_details = "spreadsheet not public";
-      } else if ( statusCode === 404 ) {
-        message = "Spreadsheet does not exist.";
-        event_details = "spreadsheet not found";
-      }
+      this.logEvent( logParams );
 
       // check if there is cached data
       if ( detail.results ) {
         // cached data provided, process as normal response
-        this.processGoogleSheetResponse( detail );
-      } else {
-        this.showError( message );
-        this.setState( { data: null } );
+        return this.processGoogleSheetResponse( detail );
       }
+
+      this.props.hideMessage();
+      this.errorFlag = true;
+      this.setState( { data: null } );
 
       if ( this.isLoading ) {
         this.isLoading = false;
         this.ready();
-      }
-
-      if ( statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" ) ) {
-        if ( !this.apiErrorFlag ) {
-          this.apiErrorFlag = true;
-          return;
-        }
       } else {
-        this.apiErrorFlag = false;
-      }
-
-      this.logEvent( {
-        "event": "error",
-        "event_details": event_details,
-        "error_details": errorMessage,
-        "url": params.spreadsheet.url,
-        "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
-      } );
-    },
-
-    processGoogleSheetQuota: function( detail ) {
-      // log the event
-      this.logEvent( {
-        "event": "error",
-        "event_details": "api quota exceeded",
-        "url": params.spreadsheet.url,
-        "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
-      } );
-
-      if ( detail && detail.results ) {
-        // cached data provided, process as normal response
-        this.processGoogleSheetResponse( detail );
-      } else {
-        this.showError( "The API Key used to retrieve data from the Spreadsheet has exceeded the daily quota. Please use a different API Key." );
-
-        this.setState( { data: null } );
-
-        if ( this.isLoading ) {
-          this.isLoading = false;
-          this.ready();
+        if ( !this.viewerPaused ) {
+          this.done();
         }
       }
     },
@@ -372,7 +343,7 @@ const prefs = new gadgets.Prefs(),
       this.viewerPaused = false;
 
       if ( this.errorFlag ) {
-        this.startErrorTimer();
+        return this.done();
       }
 
       if ( this.refs.scrollComponent && this.refs.scrollComponent.canScroll() ) {
@@ -402,35 +373,8 @@ const prefs = new gadgets.Prefs(),
       return "spreadsheet_events";
     },
 
-    clearErrorTimer: function() {
-      clearTimeout( this.errorTimer );
-      this.errorTimer = null;
-    },
-
-    startErrorTimer: function() {
-      var self = this;
-
-      this.clearErrorTimer();
-
-      this.errorTimer = setTimeout( function() {
-        // notify Viewer widget is done
-        self.done();
-      }, 5000 );
-    },
-
     logEvent: function( params ) {
       Logger.logEvent( this.getTableName(), params );
-    },
-
-    showError: function( messageVal ) {
-      this.errorFlag = true;
-
-      this.props.showMessage( messageVal );
-
-      // if Widget is playing right now, run the timer
-      if ( !this.viewerPaused ) {
-        this.startErrorTimer();
-      }
     },
 
     // Calculate the width that is taken up by rendering columns with an explicit width.
