@@ -12,8 +12,5 @@ const React = require( "react" ),
     return false;
   };
 
-  // TODO: Fix Issue 321
-  // TODO: Stop displaying error messages
-
   ReactDOM.render( <Main />, document.getElementById( "mainContainer" ) );
 } )( window, document );
