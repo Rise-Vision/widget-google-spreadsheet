@@ -363,9 +363,7 @@ const prefs = new gadgets.Prefs(),
         this.refs.scrollComponent.pause();
       }
 
-      if ( this.pudTimer ) {
-        clearTimeout( this.pudTimer );
-      }
+      this.cancelPUDTimer();
     },
 
     stop: function() {
