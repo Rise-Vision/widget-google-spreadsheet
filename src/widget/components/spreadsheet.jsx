@@ -98,18 +98,17 @@ const prefs = new gadgets.Prefs(),
 
         this.errorFlag = true;
         this.isLoading = false;
-        this.ready();
-
       } else {
         // show wait message while Storage initializes
         this.props.showMessage( "Please wait while your google sheet is loaded." );
 
         this.loadFonts();
         this.setVerticalAlignment();
-
         this.initRiseGoogleSheet();
         this.logConfiguration();
       }
+
+      this.ready();
 
     },
 
@@ -231,7 +230,6 @@ const prefs = new gadgets.Prefs(),
 
       if ( this.isLoading ) {
         this.isLoading = false;
-        this.ready();
       } else {
         // in case refresh fixed previous error
         this.errorFlag = false;
@@ -280,9 +278,9 @@ const prefs = new gadgets.Prefs(),
 
       if ( this.isLoading ) {
         this.isLoading = false;
-        this.ready();
       } else {
         if ( !this.viewerPaused ) {
+          this.cancelPUDTimer();
           this.done();
         }
       }
@@ -317,6 +315,11 @@ const prefs = new gadgets.Prefs(),
       } );
 
       Common.loadFonts( fontSettings );
+    },
+
+    cancelPUDTimer: function() {
+      clearTimeout( this.pudTimer );
+      this.pudTimer = null;
     },
 
     startPUDTimer: function() {
