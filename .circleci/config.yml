@@ -92,28 +92,6 @@ jobs:
             - dist
             - test_dist
 
-  stage-aws-dev:
-    shell: /bin/bash --login
-    environment:
-      awscli: /usr/local/bin/aws
-    docker: *BUILDIMAGE
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run: |
-          STAGE_ENV="$(git log -1 --pretty=%B | grep '\[.*\]' |sed -e 's/.*\[\(.*\)\].*/\1/g')"
-          if [ "$STAGE_ENV" != '' ]
-          then
-            echo Deploying version $(grep version package.json |grep -o '[0-9.]*') to $BUCKET_NAME-test/$STAGE_ENV-dev
-            STAGE_ENV="$STAGE_ENV-dev"
-          else
-            echo Deploying version $(grep version package.json |grep -o '[0-9.]*') to $BUCKET_NAME-test/stage-0-dev
-            STAGE_ENV='stage-0-dev'
-          fi
-          $awscli s3 ls s3://$BUCKET_NAME-test || ($awscli s3 mb s3://$BUCKET_NAME-test && $awscli s3api put-bucket-acl --bucket $BUCKET_NAME-test --grant-read 'uri="http://acs.amazonaws.com/groups/global/AllUsers"')
-          $awscli s3 sync ./test_dist s3://$BUCKET_NAME-test/$STAGE_ENV/$(grep version package.json |grep -o '[0-9.]*')/dist --delete --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
-
   stage-gcs-dev:
     shell: /bin/bash --login
     docker: *GCSIMAGE
@@ -134,27 +112,6 @@ jobs:
             STAGE_ENV='stage-0-dev'
           fi
           gsutil rsync -d -r test_dist gs://widgets.risevision.com/$BUCKET_NAME-test/$STAGE_ENV/$(grep version package.json |grep -o '[0-9.]*')/dist
-
-  stage-aws-prod:
-    shell: /bin/bash --login
-    environment:
-      awscli: /usr/local/bin/aws
-    docker: *BUILDIMAGE
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run: |
-          STAGE_ENV="$(git log -1 --pretty=%B | grep '\[.*\]' |sed -e 's/.*\[\(.*\)\].*/\1/g')"
-          if [ "$STAGE_ENV" != '' ]
-          then
-            echo Deploying version $(grep version package.json |grep -o '[0-9.]*') to $BUCKET_NAME-test/$STAGE_ENV
-          else
-            echo Deploying version $(grep version package.json |grep -o '[0-9.]*') to $BUCKET_NAME-test/stage-0
-            STAGE_ENV='stage-0'
-          fi
-          $awscli s3 ls s3://$BUCKET_NAME-test || ($awscli s3 mb s3://$BUCKET_NAME-test && $awscli s3api put-bucket-acl --bucket $BUCKET_NAME-test --grant-read 'uri="http://acs.amazonaws.com/groups/global/AllUsers"')
-          $awscli s3 sync ./dist s3://$BUCKET_NAME-test/$STAGE_ENV/$(grep version package.json |grep -o '[0-9.]*')/dist --delete --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 
   stage-gcs-prod:
     shell: /bin/bash --login
@@ -177,19 +134,6 @@ jobs:
           gsutil rsync -d -r dist gs://widgets.risevision.com/$BUCKET_NAME-test/$STAGE_ENV/$(grep version package.json |grep -o '[0-9.]*')/dist
           gsutil -m setmeta -r -h "Cache-Control:private, max-age=0" gs://widgets.risevision.com/$BUCKET_NAME-test/$STAGE_ENV/$(grep version package.json |grep -o '[0-9.]*')/dist
           gsutil acl -r ch -u AllUsers:R gs://widgets.risevision.com/$BUCKET_NAME-test/$STAGE_ENV/$(grep version package.json |grep -o '[0-9.]*')/dist
-
-  deploy-aws-stable:
-    shell: /bin/bash --login
-    environment:
-      awscli: /usr/local/bin/aws
-    docker: *BUILDIMAGE
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run: echo Deploying version $(grep version package.json |grep -o '[0-9.]*') to $BUCKET_NAME
-      - run: $awscli s3 ls s3://$BUCKET_NAME || ($awscli s3 mb s3://$BUCKET_NAME && $awscli s3api put-bucket-acl --bucket $BUCKET_NAME --grant-read 'uri="http://acs.amazonaws.com/groups/global/AllUsers"')
-      - run: $awscli s3 sync ./dist s3://$BUCKET_NAME/$(grep version package.json |grep -o '[0-9.]*')/dist --delete --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 
   deploy-gcs-stable:
     shell: /bin/bash --login
@@ -240,24 +184,10 @@ workflows:
       - build:
           requires:
             - test
-      - stage-aws-dev:
-          requires:
-            - build
-          filters:
-            branches:
-              only:
-                - /^(feature|fix|chore)[/].*/
       - stage-gcs-dev:
           requires:
             - build
             - gcloud-setup
-          filters:
-            branches:
-              only:
-                - /^(feature|fix|chore)[/].*/
-      - stage-aws-prod:
-          requires:
-            - build
           filters:
             branches:
               only:
@@ -270,13 +200,6 @@ workflows:
             branches:
               only:
                 - /^(feature|fix|chore)[/].*/
-      - deploy-aws-stable:
-          requires:
-            - build
-          filters:
-            branches:
-              only:
-                - master
       - deploy-gcs-stable:
           requires:
             - build
@@ -290,7 +213,7 @@ workflows:
             - build
       - test-memory:
           requires:
-            - deploy-aws-stable
+            - deploy-gcs-stable
           filters:
             branches:
               only:
