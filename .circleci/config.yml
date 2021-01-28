@@ -4,7 +4,7 @@ jobs:
   preconditions:
     working_directory: ~/Rise-Vision/widget-google-spreadsheet
     docker: &BUILDIMAGE
-      - image: jenkinsrise/cci-v2-transitional-widgets:0.0.4
+      - image: jenkinsrise/cci-v2-transitional-widgets:0.0.5
     steps:
       - checkout
       - run: |
@@ -67,6 +67,7 @@ jobs:
       - run: sudo apt-get update || sudo apt-get update
       - run: sudo apt-get install -y google-chrome-stable
       # Run tests
+      - run: node --version
       - run: NODE_ENV=dev npm run test
 
   build:

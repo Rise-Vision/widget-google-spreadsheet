@@ -14,6 +14,7 @@ import Logger from "../../components/widget-common/dist/logger";
 import Common from "../../components/widget-common/dist/common";
 import RiseData from "../../components/widget-common/dist/rise-data";
 import RiseGoogleSheet from "../../components/widget-common/dist/rise-google-sheet";
+import version from "../../config/version";
 import config from "../../config/config";
 
 const prefs = new gadgets.Prefs(),
@@ -66,6 +67,7 @@ const prefs = new gadgets.Prefs(),
         }
 
         Logger.setIds( companyId, displayId );
+        Logger.setVersion( version );
 
         if ( names[ 2 ] === "additionalParams" ) {
           additionalParams = JSON.parse( values[ 2 ] );

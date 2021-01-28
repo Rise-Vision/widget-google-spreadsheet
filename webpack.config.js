@@ -40,6 +40,7 @@ module.exports = {
     "./src/components/gsap/src/uncompressed/plugins/CSSPlugin.js",
     "./src/components/gsap/src/uncompressed/plugins/ScrollToPlugin.js",
     "./src/config/config.js",
+    "./src/config/version.js",
     "./src/widget/main.js",
     "./src/widget/analytics.js"
   ],
