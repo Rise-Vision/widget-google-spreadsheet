@@ -42,6 +42,7 @@
     "gulp-bump": "~0.1.8",
     "gulp-eslint": "^3.0.1",
     "gulp-if": "^2.0.0",
+    "gulp-file": "^0.3.0",
     "gulp-minify-css": "0.3.4",
     "gulp-rename": "~1.2.0",
     "gulp-sourcemaps": "^1.2.2",
@@ -52,6 +53,8 @@
     "html-webpack-plugin": "^2.16.0",
     "imports-loader": "^0.6.5",
     "jquery": "^3.0.0",
+    "karma": "^3.0.0",
+    "promisify-node": "^0.5.0",
     "react-addons-test-utils": "^0.14.8",
     "run-sequence": "^0.3.2",
     "style-loader": "^0.13.1",
@@ -59,7 +62,7 @@
     "webpack": "^1.13.0",
     "webpack-dev-server": "^1.14.1",
     "webpack-stream": "^3.2.0",
-    "widget-tester": "git://github.com/Rise-Vision/widget-tester.git#1.7.4"
+    "widget-tester": "git://github.com/Rise-Vision/widget-tester.git#v1.13.0"
   },
   "optionalDependencies": {
     "wct-local": "<2.0.16"

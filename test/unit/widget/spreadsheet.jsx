@@ -236,9 +236,18 @@ describe( "<Spreadsheet />", function() {
           "event_details": eventDetails,
           "url": additionalParams.spreadsheet.url,
           "api_key": "abc123"
+        },
+        endpointParams = {
+          severity: "info",
+          eventApp: "widget-google-spreadsheet",
+          debugInfo: JSON.stringify( {
+            "event": "configuration",
+            "url": additionalParams.spreadsheet.url,
+            "api_key": "abc123"
+          } )
         };
 
-      expect( logStub.withArgs( table, params ).called ).to.equal( true );
+      expect( logStub.withArgs( table, params, endpointParams ).called ).to.equal( true );
     } );
 
     xit( "should log the default error event", function() {

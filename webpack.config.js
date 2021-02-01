@@ -40,6 +40,7 @@ module.exports = {
     "./src/components/gsap/src/uncompressed/plugins/CSSPlugin.js",
     "./src/components/gsap/src/uncompressed/plugins/ScrollToPlugin.js",
     "./src/config/config.js",
+    "./src/config/version.js",
     "./src/widget/main.js",
     "./src/widget/analytics.js"
   ],
@@ -65,6 +66,10 @@ module.exports = {
       {
         test: require.resolve(__dirname + "/src/config/config"),
         loader: "exports?config"
+      },
+      {
+        test: require.resolve(__dirname + "/src/config/version"),
+        loader: "exports?version"
       },
       {
         test: require.resolve(__dirname + "/src/components/widget-common/dist/logger"),

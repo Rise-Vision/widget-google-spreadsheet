@@ -14,6 +14,7 @@ import Logger from "../../components/widget-common/dist/logger";
 import Common from "../../components/widget-common/dist/common";
 import RiseData from "../../components/widget-common/dist/rise-data";
 import RiseGoogleSheet from "../../components/widget-common/dist/rise-google-sheet";
+import version from "../../config/version";
 import config from "../../config/config";
 
 const prefs = new gadgets.Prefs(),
@@ -66,6 +67,8 @@ const prefs = new gadgets.Prefs(),
         }
 
         Logger.setIds( companyId, displayId );
+        Logger.setVersion( version );
+        Logger.startEndpointHeartbeats( "widget-google-spreadsheet" );
 
         if ( names[ 2 ] === "additionalParams" ) {
           additionalParams = JSON.parse( values[ 2 ] );
@@ -94,7 +97,7 @@ const prefs = new gadgets.Prefs(),
           event: "warning",
           event_details: "Widget is not supported on legacy rise player",
           url: params.spreadsheet.url
-        } );
+        }, { severity: "warning", debugInfo: JSON.stringify( { url: params.spreadsheet.url } ) } );
 
         this.errorFlag = true;
         this.isLoading = false;
@@ -171,12 +174,18 @@ const prefs = new gadgets.Prefs(),
     },
 
     logConfiguration: function() {
-      this.logEvent( {
+      const debugInfo = {
         event: "configuration",
-        event_details: JSON.stringify( params.spreadsheet ),
         url: params.spreadsheet.url,
         api_key: ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
-      } );
+      };
+
+      this.logEvent( {
+        event: debugInfo.event,
+        event_details: JSON.stringify( params.spreadsheet ),
+        url: debugInfo.url,
+        api_key: debugInfo.api_key,
+      }, { severity: "info", debugInfo: JSON.stringify( debugInfo ) } );
     },
 
     initRiseGoogleSheet: function() {
@@ -240,31 +249,42 @@ const prefs = new gadgets.Prefs(),
     processGoogleSheetError: function( detail ) {
       console.log( "processGoogleSheetError", detail );
 
-      let statusCode = 0,
-        logParams = {
+      let logParams = {
           "event": "error",
           "event_details": "spreadsheet not reachable",
-          "error_details": "The request failed with status code: 0",
           "url": params.spreadsheet.url,
           "api_key": ( params.spreadsheet.apiKey ) ? params.spreadsheet.apiKey : this.API_KEY_DEFAULT
-        };
+        },
+        errorInfo = {
+          statusCode: 0,
+          statusText: "",
+          url: logParams.url,
+          api_key: logParams.api_key
+        },
+        errorCode = "E000000085";
 
       if ( detail.status && detail.statusText ) {
-        logParams.error_details = `${detail.status}: ${detail.statusText}`;
-        statusCode = detail.status;
+        errorInfo.statusCode = detail.status;
+        errorInfo.statusText = detail.statusText;
       }
 
-      if ( statusCode === 429 ) {
+      if ( errorInfo.statusCode === 429 ) {
         logParams.event_details = "api quota exceeded";
-      } else if ( statusCode === 403 ) {
+        errorCode = "E000000081";
+      } else if ( errorInfo.statusCode === 403 ) {
         logParams.event_details = "spreadsheet not public";
-      } else if ( statusCode === 404 ) {
+        errorCode = "E000000082";
+      } else if ( errorInfo.statusCode === 404 ) {
         logParams.event_details = "spreadsheet not found";
-      } else if ( statusCode && ( String( statusCode ).slice( 0, 2 ) === "50" ) ) {
+        errorCode = "E000000083";
+      } else if ( errorInfo.statusCode && ( String( errorInfo.statusCode ).slice( 0, 2 ) === "50" ) ) {
         logParams.event_details = "api server error";
+        errorCode = "E000000084";
       }
 
-      this.logEvent( logParams );
+      logParams.error_details = JSON.stringify( errorInfo );
+
+      this.logEvent( logParams, { severity: "error", errorCode } );
 
       // check if there is cached data
       if ( detail.results ) {
@@ -374,8 +394,12 @@ const prefs = new gadgets.Prefs(),
       return "spreadsheet_events";
     },
 
-    logEvent: function( params ) {
-      Logger.logEvent( this.getTableName(), params );
+    logEvent: function( params, endpointLoggingFields ) {
+      if ( endpointLoggingFields ) {
+        endpointLoggingFields.eventApp = "widget-google-spreadsheet";
+      }
+
+      Logger.logEvent( this.getTableName(), params, endpointLoggingFields );
     },
 
     // Calculate the width that is taken up by rendering columns with an explicit width.

@@ -9,6 +9,7 @@
     env = process.env.NODE_ENV || "prod",
     eslint = require( "gulp-eslint" ),
     factory = require( "widget-tester" ).gulpTaskFactory,
+    file = require( "gulp-file" ),
     gulp = require( "gulp" ),
     gulpif = require( "gulp-if" ),
     gutil = require( "gulp-util" ),
@@ -60,6 +61,15 @@
       .pipe( eslint.format() )
       .pipe( eslint.failAfterError() );
   } );
+
+  gulp.task("version", function () {
+    var pkg = require("./package.json"),
+      str = '/* exported version */\n' +
+        'var version = "' + pkg.version + '";';
+
+    return file("version.js", str, {src: true})
+      .pipe(gulp.dest("./src/config/"));
+  });
 
   gulp.task( "settings", [ "lint" ], () => {
     let isProd = ( env === "prod" );
@@ -206,11 +216,11 @@
   } );
 
   gulp.task( "build-dev", ( cb ) => {
-    runSequence( [ "clean", "config" ], [ "settings", "widget", "fonts", "images", "i18n", "vendor", "components" ], [ "unminify" ], cb );
+    runSequence( [ "clean", "config", "version" ], [ "settings", "widget", "fonts", "images", "i18n", "vendor", "components" ], [ "unminify" ], cb );
   } );
 
   gulp.task( "build", ( cb ) => {
-    runSequence( [ "clean", "config", "bower-update" ], [ "settings", "widget", "fonts", "images", "i18n", "vendor", "components" ], [ "unminify" ], cb );
+    runSequence( [ "clean", "config", "bower-update", "version" ], [ "settings", "widget", "fonts", "images", "i18n", "vendor", "components" ], [ "unminify" ], cb );
   } );
 
   gulp.task( "bump", () => {
@@ -220,7 +230,7 @@
   } );
 
   gulp.task( "test", ( cb ) => {
-    runSequence( "config", "test:unit", "test:e2e", cb );
+    runSequence( "config", "version", "test:unit", "test:e2e", cb );
   } );
 
   gulp.task( "default", [], () => {
