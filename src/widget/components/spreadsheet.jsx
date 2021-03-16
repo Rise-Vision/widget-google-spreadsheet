@@ -261,7 +261,7 @@ const prefs = new gadgets.Prefs(),
           url: logParams.url,
           api_key: logParams.api_key
         },
-        errorCode = "E000000085";
+        errorCode = "E000000037";
 
       if ( detail.status && detail.statusText ) {
         errorInfo.statusCode = detail.status;
